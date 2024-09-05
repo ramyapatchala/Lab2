@@ -1,5 +1,14 @@
 import streamlit as st
 from openai import OpenAI, OpenAIError
+import fitz  # PyMuPDF for reading PDFs
+
+def read_pdf(file):
+    """Function to read PDF content using PyMuPDF (fitz)."""
+    document = ""
+    with fitz.open(stream=file.read(), filetype="pdf") as doc:
+        for page in doc:
+            document += page.get_text()
+    return document
 
 # Show title and description.
 st.title("📄 Document Question Answering - Q&A")
@@ -45,21 +54,24 @@ if openai_api_key and 'client' in locals():
     
     # Let the user upload a file via `st.file_uploader`.
     uploaded_file = st.file_uploader(
-        "Upload a document (.txt or .md)", type=("txt", "md")
+        "Upload a document (.txt, .md, or .pdf)", type=("txt", "md", "pdf")
     )
     
-    # Ask the user for a question via `st.text_area`.
-    #question = st.text_area(
-     #   "Now ask a question about the document!",
-      #  placeholder="Can you give me a short summary?",
-       # disabled=not uploaded_file,
-    #)
-    
+    # Initialize document variable
+    document = None
+
+    # Check if a file is uploaded
     if uploaded_file:
-        
-        # Process the uploaded file and question.
-        document = uploaded_file.read().decode()
-        
+        file_extension = uploaded_file.name.split('.')[-1].lower()
+
+        # Read the uploaded file based on its type
+        if file_extension == 'txt' or file_extension == 'md':
+            document = uploaded_file.read().decode()
+        elif file_extension == 'pdf':
+            document = read_pdf(uploaded_file)
+        else:
+            st.error("Unsupported file type.")
+
         # Modify the question based on the selected summary option.
         if summary_option == "Summarize the document in 100 words":
             summary_instruction = "Summarize this document in 100 words."
