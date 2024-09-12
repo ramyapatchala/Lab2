@@ -1,19 +1,7 @@
-# 📄 Document question answering template
+This repo consists of Lab work.
+By: Ramya Chowdary Patchala
+Course: Building Human-Computer Artificial Intelligence Applications.
 
-A simple Streamlit app that answers questions about an uploaded document via OpenAI's GPT-3.5.
-
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://document-question-answering-template.streamlit.app/)
-
-### How to run it on your own machine
-
-1. Install the requirements
-
-   ```
-   $ pip install -r requirements.txt
-   ```
-
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+Lab 1: Building Document based Summary Generator of PDF Files.
+Lab 2: Building Multi page Application
+Lab 3: Building Conversational Chat Bot Application
