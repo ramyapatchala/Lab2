@@ -65,6 +65,7 @@ if st.sidebar.button("Search"):
         query_embedding = response.data[0].embedding
         results = collection.query(
                     query_embeddings=[query_embedding],
+                    include = ['documents', 'distances', 'metadatas'],
                     n_results=3)
         for i in range(len(results['ids'][0])):
             doc_id = results['ids'][0][i]
