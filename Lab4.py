@@ -69,6 +69,8 @@ if st.sidebar.button("Search"):
                     n_results=3)
         for i in range(len(results['ids'][0])):
             doc_id = results['ids'][0][i]
+            dis_id = results['distances'][0][i]
             st.write(f"The following file/syllabus might be helpful: {doc_id}")
+            st.write(f"distance: {dis_id}")
     else:
         st.error("VectorDB not set up. Please set up the VectorDB first.")
