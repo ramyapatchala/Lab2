@@ -64,8 +64,9 @@ if st.sidebar.button("Search"):
                         model="text-embedding-3-small")
         query_embedding = response.data[0].embedding
         results = collection.query(
+                    query_embeddings=[query_embedding],
                     n_results=3, 
-                    where_document = {"$contains": topic})
+                    where = {"metadata_field": topic})
         for i in range(len(results['ids'][0])):
             doc_id = results['ids'][0][i]
             st.write(f"The following file/syllabus might be helpful: {doc_id}")
