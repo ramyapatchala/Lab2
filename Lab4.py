@@ -28,7 +28,7 @@ def setup_vectordb():
     if 'vectordb_collection' not in st.session_state:
         client = chromadb.PersistentClient()
         #client.delete_collection("PDFCollection")
-        collection = get_or_create_collection(name = "PDFCollection", metadata={"hnsw:space": "cosine", "hnsw:M": 32})
+        collection = create_collection(name = "PDFCollection", metadata={"hnsw:space": "cosine", "hnsw:M": 32})
         datafiles_path = os.path.join(os.getcwd(), "datafiles")
         pdf_files = [f for f in os.listdir(datafiles_path) if f.endswith('.pdf')]
         for pdf_file in pdf_files:
