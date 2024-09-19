@@ -7,8 +7,6 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import chromadb
-# Create or get a collection
-collection = db.create_collection("my_collection")
 if 'openai_client' not in st.session_state:
     api_key = st.secrets['key1']
     st.session_state.openai_client = OpenAI(api_key=api_key)
