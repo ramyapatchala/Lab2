@@ -17,13 +17,12 @@ def add_to_collection(collection, text, filename):
                 input=text,
                 model="text-embedding-3-small")
     embedding = response.data[0].embedding
-    st.write(filename)
-    st.write(embedding)
     collection.add(
         documents=[text],
         ids=[filename],
         embeddings=[embedding]
     )
+    return collection
 
 def setup_vectordb():
     if 'vectordb_collection' not in st.session_state:
@@ -40,7 +39,7 @@ def setup_vectordb():
                 text = ""
                 for page in pdf_reader.pages:
                     text += page.extract_text()
-                add_to_collection(collection, text, pdf_file)
+                collection = add_to_collection(collection, text, pdf_file)
         
         st.session_state.vectordb_collection = collection
         st.success(f"VectorDB setup complete with {len(pdf_files)} PDF files!")
