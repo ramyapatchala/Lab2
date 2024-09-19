@@ -7,9 +7,6 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import chromadb
-
-db = chromadb.Client()
-
 # Create or get a collection
 collection = db.create_collection("my_collection")
 if 'openai_client' not in st.session_state:
@@ -30,7 +27,7 @@ def add_to_collection(collection, text, filename):
 
 def setup_vectordb():
     if 'vectordb_collection' not in st.session_state:
-        client = chromadb.Client()
+        client = chromadb.PersistentClient()
         collection = client.create_collection("PDFCollection")
         
         datafiles_path = os.path.join(os.getcwd(), "datafiles")
