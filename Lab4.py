@@ -73,8 +73,7 @@ if st.sidebar.button("Search"):
             
             st.write(f"The following file/syllabus might be helpful: {doc_id}")
             st.write(f"distance: {dis_id}")
-            st.write(f"document: {results['documents'][0][i]})
-            st.write(f"metadata: {results['metadata'][0][i]})
+
 
     else:
         st.error("VectorDB not set up. Please set up the VectorDB first.")
