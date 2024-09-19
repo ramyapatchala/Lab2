@@ -62,8 +62,8 @@ def rerank_results(query_embedding, results, n_results=3):
     try:
         print("Type of query_embedding:", type(query_embedding))
         print("Content of query_embedding:", query_embedding)
-        print("Type of results['embeddings'][0]:", type(results['embeddings'][0]))
-        print("Content of results['embeddings'][0]:", results['embeddings'][0])
+        print("Type of results['embeddings'][0]:", type(results['embeddings']))
+        print("Content of results['embeddings'][0]:", results['embeddings'])
         
         # Convert embeddings to numpy arrays if necessary
         query_embedding = np.array(query_embedding, dtype=float)
