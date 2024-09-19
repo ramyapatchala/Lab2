@@ -1,81 +1,41 @@
-import chromadb
-from PyPDF2 import PdfReader
 import streamlit as st
-from openai.embeddings_utils import get_embedding
-import openai
+from openai import OpenAI
+import os
+from PyPDF2 import PdfReader
 
-# Set your OpenAI API Key (you'll need to configure it elsewhere in your app)
-openai.api_key = "key1"
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
-# Function to read PDFs and extract text
-def read_pdfs_to_text(uploaded_files):
-    pdf_texts = {}
-    for uploaded_file in uploaded_files:
-        pdf_reader = PdfReader(uploaded_file)
-        text = ""
-        for page_num in range(len(pdf_reader.pages)):
-            text += pdf_reader.pages[page_num].extract_text()
-        pdf_texts[uploaded_file.name] = text
-    return pdf_texts
+import chromadb
 
-# Function to create and store vector database in session state
-def create_lab4_vector_db():
-    # Only create the collection if it doesn't already exist
-    if 'Lab4_vectorDB' not in st.session_state:
-        # Initialize ChromaDB Client
-        chroma_client = chromadb.Client()
-        
-        # Create ChromaDB collection
-        collection = chroma_client.create_collection(name="Lab4Collection")
-        
-        # Upload PDF files
-        uploaded_files = st.file_uploader("Upload 7 PDF files", type="pdf", accept_multiple_files=True)
-        
-        # Ensure 7 PDFs are uploaded
-        if uploaded_files and len(uploaded_files) == 7:
-            pdf_texts = read_pdfs_to_text(uploaded_files)
-            
-            for filename, text in pdf_texts.items():
-                # Generate embeddings using OpenAI
-                embedding = get_embedding(text, engine="text-embedding-ada-002")  # Example embedding model
-                
-                # Add document with embedding to ChromaDB collection
-                collection.add(
-                    embeddings=[embedding],
-                    documents=[text],
-                    metadatas=[{"filename": filename}]
-                )
-                
-            # Store the collection in session state
-            st.session_state.Lab4_vectorDB = collection
-            st.success("Vector database created and stored in session state!")
-        else:
-            st.warning("Please upload exactly 7 PDF files.")
+if 'openai_client' not in st.session_state:
+    api_key = st.secrets['key1']
+    st.session_state.openai_client = OpenAI(api_key = api_key)
 
-# Function to test the vector database
-def test_vector_db():
-    if 'Lab4_vectorDB' in st.session_state:
-        search_string = st.text_input("Enter a search string:", value="Generative AI")
-        if search_string:
-            embedding = get_embedding(search_string, engine="text-embedding-ada-002")  # Generate embedding for search
-            results = st.session_state.Lab4_vectorDB.query(
-                query_embeddings=[embedding], 
-                n_results=3
-            )
-            # Output the ordered list of top 3 returned documents
-            st.write("Top 3 documents matching the search:")
-            for result in results['metadatas']:
-                st.write(result['filename'])
-    else:
-        st.warning("Vector database not found. Please create it first.")
+def add_to_collection(collection, text, filename):
+    openai_client = st.session_state.openai_client
+    response = openai_client.embeddings.create(
+                input = text,
+                model ="text-embedding-3-small")
+    embedding = response.data[0].embedding
+    collection.add(
+        documents = [text],
+        ids = [filename],
+        embeddings = [embedding]
+    )
 
-# Main Streamlit app
-st.title("Lab 4: Vector Database with PDF Embeddings")
+topic = st.sidebar.selectbox ("Topic", "Text Mining", "GenAI")
+openai_client = st.session_state.openai_client
+response = openai_client.embeddings.create(
+                input = topic,
+                model = "text-embedding-3-small")
+query_embedding = response.data[0].embedding
+results = collection.query(
+            query_embeddings = [query_embedding],
+            n_results = 3)
 
-# Button to trigger the vector database creation
-if st.button("Create Vector DB"):
-    create_lab4_vector_db()
-
-# Button to test the vector database
-if st.button("Test Vector DB"):
-    test_vector_db()
+for i in range(len(results['documents'][0])):
+    doc=results['documents'][0][i]
+    doc_id = results['ids'][0][i]
+    st.write(f"The following file/syllabus might be helpful: {doc_id}")
