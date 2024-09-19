@@ -7,8 +7,6 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import chromadb
-
-
 if 'openai_client' not in st.session_state:
     api_key = st.secrets['key1']
     st.session_state.openai_client = OpenAI(api_key=api_key)
@@ -28,7 +26,7 @@ def add_to_collection(collection, text, filename):
 def setup_vectordb():
     if 'vectordb_collection' not in st.session_state:
         client = chromadb.PersistentClient()
-        collection = client.get_or_create_collection("PDFCollection")
+        collection = client.get_or_create_collection(name = "PDFCollection", metadata ={"hnsw:space": "cosine"})
         
         datafiles_path = os.path.join(os.getcwd(), "datafiles")
         pdf_files = [f for f in os.listdir(datafiles_path) if f.endswith('.pdf')]
@@ -47,78 +45,28 @@ def setup_vectordb():
     else:
         st.info("VectorDB already set up.")
 
-import numpy as np
-
-def cosine_similarity(a, b):
-    try:
-        a = np.array(a, dtype=float)
-        b = np.array(b, dtype=float)
-        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-    except Exception as e:
-        print(f"Error in cosine_similarity: {e}")
-        raise
-
-def rerank_results(query_embedding, results, n_results=3):
-    try:
-        print("Type of query_embedding:", type(query_embedding))
-        print("Content of query_embedding:", query_embedding)
-        print("Type of results['embeddings'][0]:", type(results['embeddings']))
-        print("Content of results['embeddings'][0]:", results['embeddings'])
-        
-        # Convert embeddings to numpy arrays if necessary
-        query_embedding = np.array(query_embedding, dtype=float)
-        embeddings = [np.array(result, dtype=float) for result in results['embeddings'][0]]
-        
-        similarities = [cosine_similarity(query_embedding, result) for result in embeddings]
-        sorted_indices = np.argsort(similarities)[::-1]
-        return {
-            'ids': [[results['ids'][0][i] for i in sorted_indices[:n_results]]],
-            'documents': [[results['documents'][0][i] for i in sorted_indices[:n_results]]],
-            'embeddings': [[results['embeddings'][0][i] for i in sorted_indices[:n_results]]]
-        }
-    except Exception as e:
-        print(f"Error in rerank_results: {e}")
-        raise
-
-
 # Streamlit app
-st.title("Improved PDF Reader and VectorDB Demo")
+st.title("PDF Reader and VectorDB Demo")
 
 # Setup VectorDB button
 if st.button("Setup VectorDB"):
     setup_vectordb()
 
 # Topic selection and query
-topic = st.sidebar.selectbox("Topic", ("Text Mining", "Generative AI and its applications"))
+topic = st.sidebar.selectbox("Topic", ("Text Mining", "GenAI"))
 if st.sidebar.button("Search"):
     if 'vectordb_collection' in st.session_state:
         collection = st.session_state.vectordb_collection
         openai_client = st.session_state.openai_client
-        
-        # Create a more specific query
-        if topic == "Generative AI and its applications":
-            query = "Generative AI technologies, applications, and impact in various fields"
-        else:
-            query = topic
-        
         response = openai_client.embeddings.create(
-                        input=query,
+                        input=topic,
                         model="text-embedding-3-small")
         query_embedding = response.data[0].embedding
-        
-        # Fetch more results initially
         results = collection.query(
                     query_embeddings=[query_embedding],
-                    n_results=10)
-        
-        # Rerank the results
-        reranked_results = rerank_results(query_embedding, results)
-        
-        for i in range(len(reranked_results['ids'][0])):
-            doc_id = reranked_results['ids'][0][i]
-            doc_text = reranked_results['documents'][0][i][:200]  # Display first 200 characters
-            st.write(f"File: {doc_id}")
-            st.write(f"Preview: {doc_text}...")
-            st.write("---")
+                    n_results=3)
+        for i in range(len(results['ids'][0])):
+            doc_id = results['ids'][0][i]
+            st.write(f"The following file/syllabus might be helpful: {doc_id}")
     else:
         st.error("VectorDB not set up. Please set up the VectorDB first.")
