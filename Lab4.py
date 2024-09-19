@@ -7,7 +7,7 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import chromadb
-from chromadb.utils import cosine_similarity
+import cosine_similarity
 
 if 'openai_client' not in st.session_state:
     api_key = st.secrets['key1']
