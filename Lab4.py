@@ -25,7 +25,7 @@ def add_to_collection(collection, text, filename):
         embeddings = [embedding]
     )
 
-topic = st.sidebar.selectbox ("Topic", "Text Mining", "GenAI")
+topic = st.sidebar.selectbox("Topic", ("Text Mining", "GenAI"))
 openai_client = st.session_state.openai_client
 response = openai_client.embeddings.create(
                 input = topic,
