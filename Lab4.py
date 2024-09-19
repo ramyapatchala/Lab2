@@ -6,7 +6,8 @@ import importlib
 importlib.import_module('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-import chromadb
+from chromadb import Client
+from chromadb.config import Settings
 
 if 'openai_client' not in st.session_state:
     api_key = st.secrets['key1']
@@ -26,7 +27,8 @@ def add_to_collection(collection, text, filename):
 
 def setup_vectordb():
     if 'Lab4_vectorDB' not in st.session_state:
-        client = chromadb.Client()
+        # Use in-memory ChromaDB client
+        client = Client(Settings(is_persistent=False))
         collection = client.create_collection("Lab4Collection")
         
         # Get list of PDF files from datafiles folder
