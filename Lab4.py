@@ -47,21 +47,39 @@ def setup_vectordb():
     else:
         st.info("VectorDB already set up.")
 
-import numpy as np  # Make sure numpy is imported
+import numpy as np
 
 def cosine_similarity(a, b):
-    a = np.array(a)  # Ensure inputs are numpy arrays
-    b = np.array(b)
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+    try:
+        a = np.array(a, dtype=float)
+        b = np.array(b, dtype=float)
+        return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+    except Exception as e:
+        print(f"Error in cosine_similarity: {e}")
+        raise
 
 def rerank_results(query_embedding, results, n_results=3):
-    similarities = [cosine_similarity(query_embedding, result) for result in results['embeddings'][0]]
-    sorted_indices = np.argsort(similarities)[::-1]
-    return {
-        'ids': [[results['ids'][0][i] for i in sorted_indices[:n_results]]],
-        'documents': [[results['documents'][0][i] for i in sorted_indices[:n_results]]],
-        'embeddings': [[results['embeddings'][0][i] for i in sorted_indices[:n_results]]]
-    }
+    try:
+        print("Type of query_embedding:", type(query_embedding))
+        print("Content of query_embedding:", query_embedding)
+        print("Type of results['embeddings'][0]:", type(results['embeddings'][0]))
+        print("Content of results['embeddings'][0]:", results['embeddings'][0])
+        
+        # Convert embeddings to numpy arrays if necessary
+        query_embedding = np.array(query_embedding, dtype=float)
+        embeddings = [np.array(result, dtype=float) for result in results['embeddings'][0]]
+        
+        similarities = [cosine_similarity(query_embedding, result) for result in embeddings]
+        sorted_indices = np.argsort(similarities)[::-1]
+        return {
+            'ids': [[results['ids'][0][i] for i in sorted_indices[:n_results]]],
+            'documents': [[results['documents'][0][i] for i in sorted_indices[:n_results]]],
+            'embeddings': [[results['embeddings'][0][i] for i in sorted_indices[:n_results]]]
+        }
+    except Exception as e:
+        print(f"Error in rerank_results: {e}")
+        raise
+
 
 # Streamlit app
 st.title("Improved PDF Reader and VectorDB Demo")
