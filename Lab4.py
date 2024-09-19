@@ -5,7 +5,7 @@ from openai.embeddings_utils import get_embedding
 import openai
 
 # Set your OpenAI API Key (you'll need to configure it elsewhere in your app)
-openai.api_key = "YOUR_OPENAI_API_KEY"
+openai.api_key = "key1"
 
 # Function to read PDFs and extract text
 def read_pdfs_to_text(uploaded_files):
