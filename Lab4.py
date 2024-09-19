@@ -54,7 +54,7 @@ if st.button("Setup VectorDB"):
     setup_vectordb()
 
 # Topic selection and query
-topic = st.sidebar.selectbox("Topic", ("Text Mining", "Gen AI"))
+topic = st.sidebar.selectbox("Topic", ("Text Mining", "Generative AI", "Data Science Overview"))
 if st.sidebar.button("Search"):
     if 'vectordb_collection' in st.session_state:
         collection = st.session_state.vectordb_collection
