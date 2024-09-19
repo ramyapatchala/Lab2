@@ -63,7 +63,8 @@ if st.sidebar.button("Search"):
         results = collection.query(
                     query_embeddings=[query_embedding],
                     include = ['documents', 'distances', 'metadatas'],
-                    n_results=3)
+                    n_results=3,
+                    where_doc = {"$contains": topic})
         for i in range(len(results['ids'][0])):
             doc_id = results['ids'][0][i]
             dis_id = results['distances'][0][i]
