@@ -2,13 +2,12 @@ import streamlit as st
 from openai import OpenAI
 import os
 from PyPDF2 import PdfReader
-import importlib
-importlib.import_module('pysqlite3')
+__import__('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 import chromadb
 from chromadb.utils import cosine_similarity
-import numpy as np
 
 if 'openai_client' not in st.session_state:
     api_key = st.secrets['key1']
@@ -98,3 +97,5 @@ if st.sidebar.button("Search"):
             st.write("---")
     else:
         st.error("VectorDB not set up. Please set up the VectorDB first.")
+   
+
