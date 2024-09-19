@@ -64,7 +64,7 @@ if st.sidebar.button("Search"):
                         model="text-embedding-3-small")
         query_embedding = response.data[0].embedding
         results = collection.query(
-                    query_embeddings=[query_embedding],
+                    query_texts= [topic],
                     n_results=3)
         for i in range(len(results['ids'][0])):
             doc_id = results['ids'][0][i]
