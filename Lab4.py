@@ -27,11 +27,10 @@ def add_to_collection(collection, text, filename):
 def setup_vectordb():
     if 'vectordb_collection' not in st.session_state:
         client = chromadb.PersistentClient()
-        collection = client.get_or_create_collection(name = "PDFCollection")
-        
+        client.delete_collection("PDFCollection")
+        collection = client.get_or_create_collection(name = "PDFCollection", "hnsw:space": "cosine", "hnsw:M": 32)
         datafiles_path = os.path.join(os.getcwd(), "datafiles")
         pdf_files = [f for f in os.listdir(datafiles_path) if f.endswith('.pdf')]
-        
         for pdf_file in pdf_files:
             file_path = os.path.join(datafiles_path, pdf_file)
             with open(file_path, 'rb') as file:
@@ -40,7 +39,6 @@ def setup_vectordb():
                 for page in pdf_reader.pages:
                     text += page.extract_text()
                 collection = add_to_collection(collection, text, pdf_file)
-        
         st.session_state.vectordb_collection = collection
         st.success(f"VectorDB setup complete with {len(pdf_files)} PDF files!")
     else:
