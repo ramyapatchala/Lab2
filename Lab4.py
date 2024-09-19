@@ -17,6 +17,8 @@ def add_to_collection(collection, text, filename):
                 input=text,
                 model="text-embedding-3-small")
     embedding = response.data[0].embedding
+    st.write(filename)
+    st.write(embedding)
     collection.add(
         documents=[text],
         ids=[filename],
