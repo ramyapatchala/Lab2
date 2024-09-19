@@ -23,7 +23,7 @@ def create_lab4_vectorDB():
         openai_client = st.session_state.openai_client
         
         # Directory containing the 7 PDF files
-        pdf_dir = "path_to_pdf_files"  # Update this path to the actual directory of the PDF files
+        pdf_dir = "datafiles/"  # Update this path to the actual directory of the PDF files
         pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
         
         for pdf_file in pdf_files:
