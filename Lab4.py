@@ -27,7 +27,7 @@ def add_to_collection(collection, text, filename):
 def setup_vectordb():
     if 'vectordb_collection' not in st.session_state:
         client = chromadb.PersistentClient()
-        collection = client.get_or_create_collection(name = "PDFCollection")
+        collection = client.create_collection(name = "PDFCollection")
         
         datafiles_path = os.path.join(os.getcwd(), "datafiles")
         pdf_files = [f for f in os.listdir(datafiles_path) if f.endswith('.pdf')]
