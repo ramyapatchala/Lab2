@@ -6,8 +6,7 @@ import importlib
 importlib.import_module('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-from chromadb import Client
-from chromadb.config import Settings
+import chromadb
 
 if 'openai_client' not in st.session_state:
     api_key = st.secrets['key1']
@@ -26,12 +25,10 @@ def add_to_collection(collection, text, filename):
     )
 
 def setup_vectordb():
-    if 'Lab4_vectorDB' not in st.session_state:
-        # Use in-memory ChromaDB client
-        client = Client(Settings(is_persistent=False))
-        collection = client.create_collection("Lab4Collection")
+    if 'vectordb_collection' not in st.session_state:
+        client = chromadb.Client()
+        collection = client.create_collection("PDFCollection")
         
-        # Get list of PDF files from datafiles folder
         datafiles_path = os.path.join(os.getcwd(), "datafiles")
         pdf_files = [f for f in os.listdir(datafiles_path) if f.endswith('.pdf')]
         
@@ -44,46 +41,23 @@ def setup_vectordb():
                     text += page.extract_text()
                 add_to_collection(collection, text, pdf_file)
         
-        st.session_state.Lab4_vectorDB = collection
+        st.session_state.vectordb_collection = collection
         st.success(f"VectorDB setup complete with {len(pdf_files)} PDF files!")
     else:
         st.info("VectorDB already set up.")
 
-def test_vectordb(query):
-    if 'Lab4_vectorDB' in st.session_state:
-        collection = st.session_state.Lab4_vectorDB
-        openai_client = st.session_state.openai_client
-        response = openai_client.embeddings.create(
-                        input=query,
-                        model="text-embedding-3-small")
-        query_embedding = response.data[0].embedding
-        results = collection.query(
-                    query_embeddings=[query_embedding],
-                    n_results=3)
-        
-        st.write(f"Top 3 documents for query '{query}':")
-        for i, doc_id in enumerate(results['ids'][0], 1):
-            st.write(f"{i}. {doc_id}")
-    else:
-        st.error("VectorDB not set up. Please set up the VectorDB first.")
-
 # Streamlit app
-st.title("Lab 4 VectorDB Demo")
+st.title("PDF Reader and VectorDB Demo")
 
 # Setup VectorDB button
 if st.button("Setup VectorDB"):
     setup_vectordb()
 
-# Test VectorDB
-test_query = st.selectbox("Select a test query:", ["Generative AI", "Text Mining", "Data Science Overview"])
-if st.button("Test VectorDB"):
-    test_vectordb(test_query)
-
-# Original topic selection and query
+# Topic selection and query
 topic = st.sidebar.selectbox("Topic", ("Text Mining", "GenAI"))
 if st.sidebar.button("Search"):
-    if 'Lab4_vectorDB' in st.session_state:
-        collection = st.session_state.Lab4_vectorDB
+    if 'vectordb_collection' in st.session_state:
+        collection = st.session_state.vectordb_collection
         openai_client = st.session_state.openai_client
         response = openai_client.embeddings.create(
                         input=topic,
@@ -92,7 +66,7 @@ if st.sidebar.button("Search"):
         results = collection.query(
                     query_embeddings=[query_embedding],
                     n_results=3)
-        for i in range(len(results['documents'][0])):
+        for i in range(len(results['ids'][0])):
             doc_id = results['ids'][0][i]
             st.write(f"The following file/syllabus might be helpful: {doc_id}")
     else:
