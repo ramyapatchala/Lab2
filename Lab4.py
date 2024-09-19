@@ -47,7 +47,11 @@ def setup_vectordb():
     else:
         st.info("VectorDB already set up.")
 
+import numpy as np  # Make sure numpy is imported
+
 def cosine_similarity(a, b):
+    a = np.array(a)  # Ensure inputs are numpy arrays
+    b = np.array(b)
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 def rerank_results(query_embedding, results, n_results=3):
