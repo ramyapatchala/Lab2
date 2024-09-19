@@ -7,7 +7,7 @@ import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
 import chromadb
-import cosine_similarity
+
 
 if 'openai_client' not in st.session_state:
     api_key = st.secrets['key1']
@@ -46,6 +46,9 @@ def setup_vectordb():
         st.success(f"VectorDB setup complete with {len(pdf_files)} PDF files!")
     else:
         st.info("VectorDB already set up.")
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 def rerank_results(query_embedding, results, n_results=3):
     similarities = [cosine_similarity(query_embedding, result) for result in results['embeddings'][0]]
@@ -97,5 +100,3 @@ if st.sidebar.button("Search"):
             st.write("---")
     else:
         st.error("VectorDB not set up. Please set up the VectorDB first.")
-   
-
