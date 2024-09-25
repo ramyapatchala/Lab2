@@ -113,7 +113,7 @@ if prompt := st.chat_input("What would you like to know about the course?"):
     results = query_vectordb(prompt)
     
     # Set a distance threshold (adjust as needed)
-    DISTANCE_THRESHOLD = 1.0
+    DISTANCE_THRESHOLD = 0.7
     
     if results and results['documents'][0] and results['distances'][0][0] < DISTANCE_THRESHOLD:
         # Retrieve document content from the vector DB and use it as context
