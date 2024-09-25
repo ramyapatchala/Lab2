@@ -78,7 +78,7 @@ def get_ai_response(query, context):
         {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
     ]
     response = openai_client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-4o-mini",
         messages=messages,
         max_tokens=150
     )
