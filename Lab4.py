@@ -13,6 +13,7 @@ if 'openai_client' not in st.session_state:
     api_key = st.secrets['key1']
     st.session_state.openai_client = OpenAI(api_key=api_key)
 
+# Function to add PDF content to ChromaDB collection
 def add_to_collection(collection, text, filename):
     openai_client = st.session_state.openai_client
     response = openai_client.embeddings.create(
@@ -27,6 +28,7 @@ def add_to_collection(collection, text, filename):
     )
     return collection
 
+# Function to set up VectorDB if not already created
 def setup_vectordb():
     if 'Lab4_vectorDB' not in st.session_state:
         client = chromadb.PersistentClient()
@@ -52,6 +54,7 @@ def setup_vectordb():
     else:
         st.info("VectorDB already set up.")
 
+# Function to query the VectorDB and retrieve relevant documents
 def query_vectordb(query, k=3):
     if 'Lab4_vectorDB' in st.session_state:
         collection = st.session_state.Lab4_vectorDB
@@ -71,6 +74,7 @@ def query_vectordb(query, k=3):
         st.error("VectorDB not set up. Please set up the VectorDB first.")
         return None
 
+# Function to get a response from OpenAI using the retrieved context
 def get_ai_response(query, context):
     openai_client = st.session_state.openai_client
     messages = [
@@ -84,31 +88,46 @@ def get_ai_response(query, context):
     )
     return response.choices[0].message.content
 
+# Main Streamlit app
 st.title("Course Information Chatbot")
 
+# Set up the VectorDB if it's not already set up
 setup_vectordb()
 
+# Initialize chat history if not already in session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Display chat history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# Handle user input and respond
 if prompt := st.chat_input("What would you like to know about the course?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # Query VectorDB for relevant documents
     results = query_vectordb(prompt)
     if results:
+        # Retrieve document content from the vector DB and use it as context
         context = " ".join([doc for doc in results['documents'][0]])
         response = get_ai_response(prompt, context)
-            
-        st.session_state.messages.append({"role": "assistant", "content": response})
+
+        # Indicate that the bot is using context from the RAG pipeline
+        final_response = f"(Using retrieved knowledge from documents)\n\n{response}"
+        st.session_state.messages.append({"role": "assistant", "content": final_response})
         with st.chat_message("assistant"):
-            st.markdown(response)
+            st.markdown(final_response)
+
+            # Optionally display related document names
             st.write("Related documents:")
             for i, doc_id in enumerate(results['ids'][0]):
                 st.write(f"{i+1}. {doc_id}")
-
+    else:
+        response = get_ai_response(prompt, "")
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        with st.chat_message("assistant"):
+            st.markdown(response)
