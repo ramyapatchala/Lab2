@@ -2,12 +2,11 @@ import streamlit as st
 from openai import OpenAI
 import os
 from PyPDF2 import PdfReader
-import sys
-import chromadb
-
-# Workaround for SQLite version issues
 __import__('pysqlite3')
+import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
+import chromadb
 
 # Initialize OpenAI client
 if 'openai_client' not in st.session_state:
@@ -30,7 +29,7 @@ def add_to_collection(collection, text, filename):
 
 def setup_vectordb():
     if 'Lab4_vectorDB' not in st.session_state:
-        client = chromadb.PersistentClient(path="./chroma_db")
+        client = chromadb.PersistentClient()
         collection = client.get_or_create_collection(
             name="Lab4Collection",
             metadata={"hnsw:space": "cosine", "hnsw:M": 32}
