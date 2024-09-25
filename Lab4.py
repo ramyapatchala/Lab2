@@ -84,34 +84,31 @@ def get_ai_response(query, context):
     )
     return response.choices[0].message.content
 
-def main():
-    st.title("Course Information Chatbot")
+st.title("Course Information Chatbot")
 
-    setup_vectordb()
+setup_vectordb()
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-    if prompt := st.chat_input("What would you like to know about the course?"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+if prompt := st.chat_input("What would you like to know about the course?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-        results = query_vectordb(prompt)
-        if results:
-            context = " ".join([doc for doc in results['documents'][0]])
-            response = get_ai_response(prompt, context)
+    results = query_vectordb(prompt)
+    if results:
+        context = " ".join([doc for doc in results['documents'][0]])
+        response = get_ai_response(prompt, context)
             
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            with st.chat_message("assistant"):
-                st.markdown(response)
-                st.write("Related documents:")
-                for i, doc_id in enumerate(results['ids'][0]):
-                    st.write(f"{i+1}. {doc_id}")
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        with st.chat_message("assistant"):
+            st.markdown(response)
+            st.write("Related documents:")
+            for i, doc_id in enumerate(results['ids'][0]):
+                st.write(f"{i+1}. {doc_id}")
 
-if __name__ == "__main__":
-    main()
