@@ -111,7 +111,11 @@ if prompt := st.chat_input("What would you like to know about the course?"):
 
     # Query VectorDB for relevant documents
     results = query_vectordb(prompt)
-    if results and results['documents'][0]:
+    
+    # Set a distance threshold (adjust as needed)
+    DISTANCE_THRESHOLD = 0.3
+    
+    if results and results['documents'][0] and results['distances'][0][0] < DISTANCE_THRESHOLD:
         # Retrieve document content from the vector DB and use it as context
         context = " ".join([doc for doc in results['documents'][0]])
         response = get_ai_response(prompt, context)
