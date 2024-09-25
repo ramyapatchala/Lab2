@@ -111,7 +111,7 @@ if prompt := st.chat_input("What would you like to know about the course?"):
 
     # Query VectorDB for relevant documents
     results = query_vectordb(prompt)
-    if results:
+    if results and results['documents'][0]:
         # Retrieve document content from the vector DB and use it as context
         context = " ".join([doc for doc in results['documents'][0]])
         response = get_ai_response(prompt, context)
@@ -127,7 +127,9 @@ if prompt := st.chat_input("What would you like to know about the course?"):
             for i, doc_id in enumerate(results['ids'][0]):
                 st.write(f"{i+1}. {doc_id}")
     else:
+        # If no relevant documents were found, generate response without document context
         response = get_ai_response(prompt, "")
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        final_response = f"(No relevant information found in documents, answering from general knowledge)\n\n{response}"
+        st.session_state.messages.append({"role": "assistant", "content": final_response})
         with st.chat_message("assistant"):
-            st.markdown(response)
+            st.markdown(final_response)
