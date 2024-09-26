@@ -124,7 +124,7 @@ if st.button("Get Weather"):
             
             # OpenAI request for clothing and picnic suggestion
             messages = [{"role": "user", "content": prompt}]
-            response = chat_completion_request(messages)
+            response = chat_completion_request(messages, tools = tools)
 
             st.write(response.choices[0].message["content"])
 
