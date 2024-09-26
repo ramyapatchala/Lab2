@@ -1,5 +1,6 @@
 import requests
 import streamlit as st
+import openai
 
 def get_current_weather(location, API_key):
     if "," in location:
@@ -25,24 +26,94 @@ def get_current_weather(location, API_key):
         "humidity": round(humidity, 2)
     }
 
-st.title("Current Weather App")
 
-# Input field for location without default value
-location = st.text_input("Enter a location (city name):")
+# OpenAI API setup
+client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# Button to trigger weather fetch
-if st.button("Get Weather"):
-    if location:  # Check if location is not empty
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_weather",
+            "description": "Get the current weather",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ['celsius', 'fahrenheit'],
+                        "description": "The temperature unit to use. Infer this from the user's location.",
+                    },
+                },
+                "required": ["location", "format"],
+            },
+        }
+    },
+]
+
+def chat_completion_request(messages, tools=None, tool_choice=None):
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+        )
+        return response
+    except Exception as e:
+        st.error(f"Unable to generate ChatCompletion response: {e}")
+        return None
+
+st.title("Weather Chatbot with Suggestions")
+
+location = st.text_input("Enter a location (city name):", "Syracuse, NY")
+
+if st.button("Get Weather and Suggestions"):
+    if location:
         api_key = st.secrets["OpenWeatherAPIkey"]
-        try:
-            weather_data = get_current_weather(location, api_key)
-            st.write(f"Current weather in {weather_data['location']}:")
-            st.write(f"Temperature: {weather_data['temperature']}°C")
-            st.write(f"Feels like: {weather_data['feels_like']}°C")
-            st.write(f"Min temperature: {weather_data['temp_min']}°C")
-            st.write(f"Max temperature: {weather_data['temp_max']}°C")
-            st.write(f"Humidity: {weather_data['humidity']}%")
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+        
+        # Initial message to the chatbot
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant that provides weather information and suggestions."},
+            {"role": "user", "content": f"What's the weather like in {location} today? Based on the weather, what clothes should I wear and is it a good day for a picnic?"}
+        ]
+        
+        # First API call to get weather data
+        chat_response = chat_completion_request(messages, tools=tools)
+        if chat_response:
+            assistant_message = chat_response.choices[0].message
+            messages.append(assistant_message)
+            
+            # Check if the assistant is requesting weather data
+            if assistant_message.tool_calls:
+                tool_call = assistant_message.tool_calls[0]
+                if tool_call.function.name == "get_current_weather":
+                    # Get actual weather data
+                    weather_data = get_current_weather(location, api_key)
+                    
+                    # Provide weather data to the assistant
+                    messages.append({
+                        "role": "function",
+                        "name": "get_current_weather",
+                        "content": str(weather_data)
+                    })
+                    
+                    # Second API call to get suggestions
+                    final_response = chat_completion_request(messages)
+                    if final_response:
+                        suggestion = final_response.choices[0].message.content
+                        st.write(suggestion)
+                    else:
+                        st.error("Failed to get suggestions.")
+                else:
+                    st.error(f"Unexpected function call: {tool_call.function.name}")
+            else:
+                st.write(assistant_message.content)
+        else:
+            st.error("Failed to communicate with the chatbot.")
     else:
         st.warning("Please enter a location.")
