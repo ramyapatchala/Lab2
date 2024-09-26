@@ -63,7 +63,7 @@ def chat_completion_request(messages, tools=None):
             params["functions"] = tools
             params["function_call"] = "auto"
         
-        response = client.chat_completions.create(**params)
+        response = openai.ChatCompletion.create(**params)
         return response
     except Exception as e:
         st.error(f"Unable to generate ChatCompletion response: {e}")
