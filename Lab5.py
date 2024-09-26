@@ -28,7 +28,7 @@ def get_current_weather(location, API_key):
 
 
 # OpenAI API setup
-client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+client = openai.OpenAI(api_key=st.secrets["key1"])
 
 tools = [
     {
