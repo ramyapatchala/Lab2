@@ -55,6 +55,7 @@ tools = [
 ]
 
 client = openai.OpenAI(api_key=st.secrets["key1"])
+
 # Function for OpenAI chat completion requests
 def chat_completion_request(messages, tools, tool_choice=None):
     try:
@@ -99,8 +100,8 @@ def get_current_weather(location, API_key):
 # Streamlit Weather App Interface
 st.title("Current Weather App")
 
-# Input field for location without default value
-location = st.text_input("Enter a location (city name):")
+# Input field for location with "Syracuse, NY" as the default value
+location = st.text_input("Enter a location (city name):", value="Syracuse, NY")
 
 # Button to trigger weather fetch
 if st.button("Get Weather"):
