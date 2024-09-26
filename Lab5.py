@@ -126,7 +126,7 @@ if st.button("Get Weather"):
             messages = [{"role": "user", "content": prompt}]
             response = chat_completion_request(messages, tools = tools)
 
-            st.write(response.choices[0])
+            st.write(response.choices[0].message.content)
 
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
