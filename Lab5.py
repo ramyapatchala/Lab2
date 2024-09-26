@@ -28,7 +28,6 @@ def get_current_weather(location, API_key):
 
 client = openai.OpenAI(api_key=st.secrets["key1"])
 
-
 tools = [
     {
         "type": "function",
@@ -54,17 +53,17 @@ tools = [
     },
 ]
 
-def chat_completion_request(messages, tools=None, tool_choice=None):
+def chat_completion_request(messages, tools=None):
     try:
         params = {
             "model": "gpt-4",
             "messages": messages,
         }
         if tools:
-            params["tools"] = tools
-            params["tool_choice"] = "auto"
+            params["functions"] = tools
+            params["function_call"] = "auto"
         
-        response = client.chat.completions.create(**params)
+        response = client.chat_completions.create(**params)
         return response
     except Exception as e:
         st.error(f"Unable to generate ChatCompletion response: {e}")
@@ -87,34 +86,36 @@ if st.button("Get Weather and Suggestions"):
         # First API call to get weather data
         chat_response = chat_completion_request(messages, tools=tools)
         if chat_response:
-            assistant_message = chat_response.choices[0].message
+            assistant_message = chat_response["choices"][0]["message"]
             messages.append(assistant_message)
             
             # Check if the assistant is requesting weather data
-            if assistant_message.tool_calls:
-                tool_call = assistant_message.tool_calls[0]
-                if tool_call.function.name == "get_current_weather":
+            if "function_call" in assistant_message:
+                function_call = assistant_message["function_call"]
+                
+                if function_call["name"] == "get_current_weather":
                     # Get actual weather data
                     weather_data = get_current_weather(location, api_key)
                     
-                    # Provide weather data to the assistant
+                    # Provide weather data to the assistant, making sure to include the tool_call_id
                     messages.append({
                         "role": "function",
                         "name": "get_current_weather",
+                        "tool_call_id": function_call["id"],  # Associate response with the tool call
                         "content": str(weather_data)
                     })
                     
                     # Second API call to get suggestions
                     final_response = chat_completion_request(messages)
                     if final_response:
-                        suggestion = final_response.choices[0].message.content
+                        suggestion = final_response["choices"][0]["message"]["content"]
                         st.write(suggestion)
                     else:
                         st.error("Failed to get suggestions.")
                 else:
-                    st.error(f"Unexpected function call: {tool_call.function.name}")
+                    st.error(f"Unexpected function call: {function_call['name']}")
             else:
-                st.write(assistant_message.content)
+                st.write(assistant_message["content"])
         else:
             st.error("Failed to communicate with the chatbot.")
     else:
