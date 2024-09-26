@@ -25,5 +25,24 @@ def get_current_weather(location, API_key):
         "humidity": round(humidity, 2)
     }
 
-api_key = st.secrets["OpenWeatherAPIkey"]
-st.write(get_current_weather('Syracuse', api_key))
+st.title("Current Weather App")
+
+# Input field for location without default value
+location = st.text_input("Enter a location (city name):")
+
+# Button to trigger weather fetch
+if st.button("Get Weather"):
+    if location:  # Check if location is not empty
+        api_key = st.secrets["OpenWeatherAPIkey"]
+        try:
+            weather_data = get_current_weather(location, api_key)
+            st.write(f"Current weather in {weather_data['location']}:")
+            st.write(f"Temperature: {weather_data['temperature']}°C")
+            st.write(f"Feels like: {weather_data['feels_like']}°C")
+            st.write(f"Min temperature: {weather_data['temp_min']}°C")
+            st.write(f"Max temperature: {weather_data['temp_max']}°C")
+            st.write(f"Humidity: {weather_data['humidity']}%")
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
+    else:
+        st.warning("Please enter a location.")
