@@ -27,8 +27,6 @@ def get_current_weather(location, API_key):
     }
 
 
-# OpenAI API setup
-client = openai.OpenAI(api_key=st.secrets["key1"])
 
 tools = [
     {
@@ -57,12 +55,15 @@ tools = [
 
 def chat_completion_request(messages, tools=None, tool_choice=None):
     try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=messages,
-            tools=tools,
-            tool_choice="auto",
-        )
+        params = {
+            "model": "gpt-4",
+            "messages": messages,
+        }
+        if tools:
+            params["tools"] = tools
+            params["tool_choice"] = "auto"
+        
+        response = client.chat.completions.create(**params)
         return response
     except Exception as e:
         st.error(f"Unable to generate ChatCompletion response: {e}")
