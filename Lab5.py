@@ -1,8 +1,9 @@
 import requests
 import streamlit as st
+
 def get_current_weather(location, API_key):
     if "," in location:
-      location = location.split(",")[0].strip()
+        location = location.split(",")[0].strip()
       
     urlbase = "https://api.openweathermap.org/data/2.5/"
     urlweather = f"weather?q={location}&appid={API_key}"
@@ -15,12 +16,14 @@ def get_current_weather(location, API_key):
     temp_min = data['main']['temp_min'] - 273.15
     temp_max = data['main']['temp_max'] - 273.15
     humidity = data['main']['humidity']
-    return {"location": location,
-            "temperature": round(temp, 2),
-            "feels_like": round(feels_like, 2),
-            "temp_min": round(temp_min, 2),
-            "temp_max": round(temp_max, 2),
-            "humidity": round(humidity, 2)
-            }
+    return {
+        "location": location,
+        "temperature": round(temp, 2),
+        "feels_like": round(feels_like, 2),
+        "temp_min": round(temp_min, 2),
+        "temp_max": round(temp_max, 2),
+        "humidity": round(humidity, 2)
+    }
+
 api_key = st.secrets["OpenWeatherAPIkey"]
-st.write(get_current_weather('Syracuse', api_key)
+st.write(get_current_weather('Syracuse', api_key))
