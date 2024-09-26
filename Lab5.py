@@ -26,6 +26,7 @@ def get_current_weather(location, API_key):
         "humidity": round(humidity, 2)
     }
 
+client = openai.OpenAI(api_key=st.secrets["key1"])
 
 
 tools = [
