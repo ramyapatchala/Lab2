@@ -54,10 +54,11 @@ tools = [
     }
 ]
 
+client = OpenAI(api_key = st.secrets['key1'])
 # Function for OpenAI chat completion requests
 def chat_completion_request(messages, tools=None, tool_choice=None):
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
             tools=tools,
