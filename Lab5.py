@@ -1,164 +1,136 @@
+import requests
 import streamlit as st
 import openai
-import os
-import chromadb
-from bs4 import BeautifulSoup
-from openai import OpenAI
 
-# Function to verify OpenAI API key
-def verify_openai_key(api_key):
-    try:
-        client = OpenAI(api_key=api_key)
-        client.models.list()
-        return client, True, "API key is valid"
-    except Exception as e:
-        return None, False, str(e)
-
-# Vector DB functions
-def add_to_collection(collection, text, filename):
-    openai_client = OpenAI(api_key=st.secrets['key1'])
-    response = openai_client.embeddings.create(
-        input=text,
-        model="text-embedding-3-small"
-    )
-    embedding = response.data[0].embedding
-    collection.add(
-        documents=[text],
-        ids=[filename],
-        embeddings=[embedding]
-    )
-    return collection
-
-# OpenAI function calling setup
+# Define the tools as described
 tools = [
     {
         "type": "function",
         "function": {
-            "name": "search_vectordb",
-            "description": "Search the vector database for relevant information about iSchool student organizations.",
+            "name": "get_current_weather",
+            "description": "Get the current weather",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {
+                    "location": {
                         "type": "string",
-                        "description": "The query to search the vector database."
-                    }
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ['celcius', 'fahrenheit'],
+                        "description": "The temperature unit to use. Infer this from the user's location.",
+                    },
                 },
-                "required": ["query"]
+                "required": ["location", "format"],
             },
         },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_n_day_weather_forecast",
+            "description": "Get an N-day Weather forecast",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and state, e.g. Syracuse, NY",
+                    },
+                    "format": {
+                        "type": "string",
+                        "enum": ["celcius", "fahrenheit"],
+                        "description": "The temperature unit to use. Infer this from user's location.",
+                    },
+                    "num_days": {
+                        "type": "integer",
+                        "description": "The number of days to forecast",
+                    },
+                },
+                "required": ["location", "format", "num_days"],
+            },
+        }
     }
 ]
 
+client = openai.OpenAI(api_key=st.secrets["key1"])
+
 # Function for OpenAI chat completion requests
-def chat_completion_request(messages, tools):
+def chat_completion_request(messages, tools, tool_choice=None):
     try:
         response = client.chat.completions.create(
-            model="gpt-4-turbo-preview",
+            model="gpt-4o",
             messages=messages,
             tools=tools,
             tool_choice="auto",
         )
+        st.write(messages)
         return response
     except Exception as e:
         st.error(f"Unable to generate ChatCompletion response. Error: {e}")
         return e
 
-def setup_vectordb():
-    db_path = "HW4_VectorDB"
+# Weather data function
+def get_current_weather(location, API_key):
+    if "," in location:
+        location = location.split(",")[0].strip()
+
+    urlbase = "https://api.openweathermap.org/data/2.5/"
+    urlweather = f"weather?q={location}&appid={API_key}"
+    url = urlbase + urlweather
+    response = requests.get(url)
+    data = response.json()
+
+    # Extract temperatures & Convert Kelvin to Celsius
+    temp = data['main']['temp'] - 273.15
+    feels_like = data['main']['feels_like'] - 273.15
+    temp_min = data['main']['temp_min'] - 273.15
+    temp_max = data['main']['temp_max'] - 273.15
+    humidity = data['main']['humidity']
     
-    if not os.path.exists(db_path):
-        st.info("Setting up vector DB for the first time...")
-        client = chromadb.PersistentClient(path=db_path)
-        collection = client.get_or_create_collection(
-            name="HW4Collection",
-            metadata={"hnsw:space": "cosine", "hnsw:M": 32}
-        )
-        
-        su_orgs_path = os.path.join(os.getcwd(), "HWs/su_orgs/")
-        html_files = [f for f in os.listdir(su_orgs_path) if f.endswith('.html')]
-        
-        for html_file in html_files:
-            file_path = os.path.join(su_orgs_path, html_file)
-            with open(file_path, 'r', encoding='utf-8') as file:
-                soup = BeautifulSoup(file, 'html.parser')
-                text = soup.get_text(separator=' ', strip=True)
-                collection = add_to_collection(collection, text, html_file)
-        
-        st.success(f"VectorDB setup complete with {len(html_files)} HTML files!")
+    return {
+        "location": location,
+        "temperature": round(temp, 2),
+        "feels_like": round(feels_like, 2),
+        "temp_min": round(temp_min, 2),
+        "temp_max": round(temp_max, 2),
+        "humidity": round(humidity, 2)
+    }
+
+# Streamlit Weather App Interface
+st.title("Current Weather App")
+
+# Input field for location with "Syracuse, NY" as the default value
+location = st.text_input("Enter a location (city name):", value="Syracuse, NY")
+
+# Button to trigger weather fetch
+if st.button("Get Weather"):
+    if location:
+        api_key = st.secrets["OpenWeatherAPIkey"]
+        try:
+            # Fetch and display weather data
+            weather_data = get_current_weather(location, api_key)
+            st.write(f"Current weather in {weather_data['location']}:")
+            st.write(f"Temperature: {weather_data['temperature']}°C")
+            st.write(f"Feels like: {weather_data['feels_like']}°C")
+            st.write(f"Min temperature: {weather_data['temp_min']}°C")
+            st.write(f"Max temperature: {weather_data['temp_max']}°C")
+            st.write(f"Humidity: {weather_data['humidity']}%")
+
+            # Prepare prompt for OpenAI to suggest clothing and picnic advice
+            prompt = (f"The weather in {weather_data['location']} is {weather_data['temperature']}°C "
+                      f"with a feels-like temperature of {weather_data['feels_like']}°C, "
+                      f"and a humidity of {weather_data['humidity']}%. "
+                      "What should I wear today and is it a good day for a picnic?")
+            
+            # OpenAI request for clothing and picnic suggestion
+            messages = [{"role": "user", "content": prompt}]
+            response = chat_completion_request(messages, tools = tools)
+            st.write(response)
+            st.write(response.choices[0].message.content)
+
+        except Exception as e:
+            st.error(f"An error occurred: {str(e)}")
     else:
-        st.info("VectorDB already exists. Loading from disk...")
-        client = chromadb.PersistentClient(path=db_path)
-        st.session_state.HW4_vectorDB = client.get_collection(name="HW4Collection")
-
-def search_vectordb(query, k=3):
-    if 'HW4_vectorDB' in st.session_state:
-        collection = st.session_state.HW4_vectorDB
-        openai_client = OpenAI(api_key=st.secrets['key1'])
-        response = openai_client.embeddings.create(
-            input=query,
-            model="text-embedding-3-small"
-        )
-        query_embedding = response.data[0].embedding
-        results = collection.query(
-            query_embeddings=[query_embedding],
-            include=['documents', 'distances', 'metadatas'],
-            n_results=k
-        )
-        return results
-    else:
-        st.error("VectorDB not set up. Please set up the VectorDB first.")
-        return None
-
-# Streamlit App
-st.title("iSchool Student Organizations Chatbot")
-
-# API key verification
-openai_api_key = st.secrets["key1"]
-client, is_valid, message = verify_openai_key(openai_api_key)
-
-if is_valid:
-    st.sidebar.success(f"OpenAI API key is valid!", icon="✅")
-else:
-    st.sidebar.error(f"Invalid OpenAI API key: {message}", icon="❌")
-    st.stop()
-
-# Set up VectorDB
-setup_vectordb()
-
-# Initialize session state
-if 'messages' not in st.session_state:
-    st.session_state['messages'] = []
-
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-# Chat input
-if prompt := st.chat_input("What would you like to know about iSchool student organizations?"):
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Query VectorDB for relevant documents
-    results = search_vectordb(prompt)
-    
-    if results:
-        context = " ".join([doc for doc in results['documents'][0]])
-        context_message = {"role": "system", "content": f"Relevant information: {context}"}
-    else:
-        context_message = {"role": "system", "content": "No specific context found."}
-
-    messages_for_llm = [context_message, {"role": "user", "content": prompt}]
-
-    # Generate response using OpenAI
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        response = chat_completion_request(messages_for_llm, tools=tools)
-        assistant_response = response.choices[0].message.content
-        message_placeholder.markdown(assistant_response)
-    
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+        st.warning("Please enter a location.")
